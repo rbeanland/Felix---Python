@@ -30,12 +30,12 @@ def ReciprocalLattice(IDiffractionFLAG,
     -----------------------------------------------
     """
     tiny=np.finfo(np.float32).tiny
-    RarVecO=np.array((0,0,0),dtype="float")
-    RbrVecO=np.array((0,0,0),dtype="float")
-    RcrVecO=np.array((0,0,0),dtype="float")
-    RXDirO=np.array((0,0,0),dtype="float")
-    RYDirO=np.array((0,0,0),dtype="float")
-    RZDirO=np.array((0,0,0),dtype="float")
+    RarVecO=np.ones(3,dtype="float")
+    RbrVecO=np.ones(3,dtype="float")
+    RcrVecO=np.ones(3,dtype="float")
+    RXDirO=np.ones(3,dtype="float")
+    RYDirO=np.ones(3,dtype="float")
+    RZDirO=np.ones(3,dtype="float")
     RTMatC2O=np.zeros((3,3),dtype="float")
     RTMatO2M=np.zeros((3,3),dtype="float")
     
@@ -102,8 +102,8 @@ def ReciprocalLattice(IDiffractionFLAG,
     for i in range(len(RaVecO)):
         RTMatC2O[i][0]=RaVecO[i]
         RTMatC2O[i][1]=RbVecO[i]
-        RTMatC2O[i][2]=RcrVecO[i]
-    
+        RTMatC2O[i][2]=RcVecO[i]
+        
     """
     RXDirC is the reciprocal lattice vector that defines the
     x-axis of the diffraction pattern and RZDirC the beam
@@ -115,7 +115,7 @@ def ReciprocalLattice(IDiffractionFLAG,
     RXDirO=(RXDirC[0]*RarVecO)+(RXDirC[1]*RbrVecO)+(RXDirC[2]*RcrVecO)
     RXDirOMod=np.sqrt(np.dot(RXDirO,RXDirO))
     RXDirO=RXDirO/RXDirOMod
-    RZDirO=(RZDirC[0]*RarVecO)+(RZDirC[1]*RbrVecO)+(RZDirC[2]*RcrVecO)
+    RZDirO=(RZDirC[0]*RaVecO)+(RZDirC[1]*RbVecO)+(RZDirC[2]*RcVecO)
     RZDirOMod=np.sqrt(np.dot(RZDirO,RZDirO))
     RZDirO=RZDirO/RZDirOMod
     RYDirO=np.cross(RZDirO,RXDirO)
