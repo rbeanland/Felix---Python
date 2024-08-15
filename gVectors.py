@@ -2,7 +2,7 @@
 """
 Created on Mon Jul 22 11:50:57 2024
 
-@author: jgwbe
+@author: Jacob Watkiss
 """
 
 """
@@ -11,7 +11,8 @@ Imports any necessary packages, libraries, modules etc.
 -----------------------------------------------
 """
 import numpy as np
-import ReciprocalLattice as RL
+import globalvariables as g
+IErr=g.IErr
 
 """
 -----------------------------------------------
@@ -19,8 +20,7 @@ Define the function
 -----------------------------------------------
 """
 def gVectors(RarVecM,RbrVecM,RcrVecM,RNormDirM,Rhkl,RConvergenceAngle,
-             INhkl,IPixelCount,
-             IErr):
+             INhkl,IPixelCount):
     
     """
     -----------------------------------------------
@@ -58,7 +58,7 @@ def gVectors(RarVecM,RbrVecM,RcrVecM,RNormDirM,Rhkl,RConvergenceAngle,
     Outputs and returns all
     -----------------------------------------------
     """
-    print("First 16 g-vectors",RgMatrix[0:17][0][:])
+    print("First 16 g-vectors:\n",RgMatrix[0:16][0][:])
     print("g-vectors and magnitude (1/A), in the microscope reference frame")
     for j in range(0,INhkl):
         print("hkl:",Rhkl[j][:])
@@ -69,19 +69,3 @@ def gVectors(RarVecM,RbrVecM,RcrVecM,RNormDirM,Rhkl,RConvergenceAngle,
         print("g.n:",RgDotNorm[j])
     
     return RgPool,RgPoolMag,RgDotNorm,RgMatrix
-    
-
-
-"""
------------------------------------------------
-Call the function
------------------------------------------------
-"""
-
-
-
-
-
-
-
-

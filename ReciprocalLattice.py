@@ -2,7 +2,7 @@
 """
 Created on Mon Jul 22 12:00:35 2024
 
-@author: jgwbe
+@author: Jacob Watkiss
 """
 
 """
@@ -13,6 +13,8 @@ Imports any necessary packages, libraries, modules etc.
 import numpy as np
 from read_cif_mod import read_cif
 import re
+import globalvariables as g
+IErr=g.IErr
 
 """
 -----------------------------------------------
@@ -21,8 +23,7 @@ Define the function
 """
 def ReciprocalLattice(IDiffractionFLAG,
                       RLengthX,RLengthY,RLengthZ,RAlpha,RBeta,RGamma,RVolume,RNormDirC,RXDirC,RZDirC,
-                      SSpaceGroupName,
-                      IErr):
+                      SSpaceGroupName):
     
     """
     -----------------------------------------------
@@ -47,8 +48,8 @@ def ReciprocalLattice(IDiffractionFLAG,
     -----------------------------------------------
     """
     RaVecO=np.array((RLengthX,0,0),dtype="float")
-    RbVecO=np.array((RLengthY*np.cos(RGamma),RLengthY*np.sin(RGamma),0),dtype="float")
-    RcVecO=np.array((RLengthZ*np.cos(RBeta),RLengthZ*((np.cos(RAlpha)-np.cos(RBeta)*np.cos(RGamma))/np.sin(RGamma)),RLengthZ*RVolume/np.sin(RGamma)),dtype="float")
+    RbVecO=np.array((RLengthY*g.cos(RGamma),RLengthY*g.sin(RGamma),0),dtype="float")
+    RcVecO=np.array((RLengthZ*g.cos(RBeta),RLengthZ*((g.cos(RAlpha)-g.cos(RBeta)*g.cos(RGamma))/g.sin(RGamma)),(RLengthZ*RVolume)/(g.sin(RGamma)*RLengthX*RLengthY*RLengthZ)),dtype="float")
     
     """
     -----------------------------------------------
@@ -156,6 +157,7 @@ def ReciprocalLattice(IDiffractionFLAG,
     We are using the optical convention exp(i*g.r)
     -----------------------------------------------
     """
+
     RarVecM=2*np.pi*np.cross(RbVecM,RcVecM)/np.dot(RbVecM,np.cross(RcVecM,RaVecM))
     RbrVecM=2*np.pi*np.cross(RcVecM,RaVecM)/np.dot(RcVecM,np.cross(RaVecM,RbVecM))
     RcrVecM=2*np.pi*np.cross(RaVecM,RbVecM)/np.dot(RaVecM,np.cross(RbVecM,RcVecM))
@@ -165,21 +167,3 @@ def ReciprocalLattice(IDiffractionFLAG,
             RaVecM,RbVecM,RcVecM,RarVecM,RbrVecM,RcrVecM,RNormDirM,
             RTMatC2O,RTMatO2M
         )
-    
-"""
------------------------------------------------
-Call the function with data read from the CIF.
------------------------------------------------
-"""
-_,_,_,_,_,_,SSpaceGroupName,_,_,_,RLengthX,RLengthY,RLengthZ,RAlpha,RBeta,RGamma,RVolume,_,_,_=read_cif(0)
-"""I do not yet know what the following variables
-are/where they come from, so here's some temp ones"""
-RNormDirC=np.array((1,1,1),dtype="float")
-RXDirC=np.array((1,1,1),dtype="float")
-RZDirC=np.array((1,1,1),dtype="float")
-ReciprocalLattice(0,RLengthX,RLengthY,RLengthZ,RAlpha,RBeta,RGamma,RVolume,RNormDirC,RXDirC,RZDirC,SSpaceGroupName,0)
-
-
-
-
-
