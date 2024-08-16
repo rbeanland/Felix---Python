@@ -9,18 +9,6 @@ from CifFile import ReadCif
 import numpy as np
 import re
 
-# function to reads the value associated with the inputted label
-def find(file,target,filename,dtype):
-    found = False
-    for line in file:
-        if target in line:
-            found = True
-            line = line.replace(target,"")
-            line = clean(line,dtype)
-            return line
-    if (found == False):
-        print(target,"not found in .cif")
-        return "absent"
 
 # function to set correct data type and remove blank spaces
 def clean(var, dtype):
@@ -39,34 +27,92 @@ def clean(var, dtype):
         var=float(var.strip())
     return var
 
+# function to reads the value associated with the inputted label
+def cif_find(file,target,filename,dtype):
+    found = False
+    for line in file:
+        if target in line:
+            found = True
+            line = line.replace(target,"")
+            line = clean(line,dtype)
+            return line
+    if (found == False):
+        print(target,"not found in .cif")
+        return "absent"
+
+# Converts part of a symmetry operation into a vector and constant
+def symop_part(sym):
+    #vector part
+    if ("x" in sym):
+        vec = np.array([1,0,0])
+    if ("-x" in sym):
+        vec = np.array([-1,0,0])
+    if ("y" in sym):
+        vec = np.array([0,1,0])
+    if ("-y" in sym):
+        vec = np.array([0,-1,0])
+    if ("z" in sym):
+        vec = np.array([0,0,1])
+    if ("-z" in sym):
+        vec = np.array([0,0,-1])
+    # constant - we expect a fraction
+    if (sym.find("/") == -1):  #there is no fraction
+        const = 0
+    else:  # we expect single digit numerator and denominator
+        sign = 1
+        if ("-" in sym[sym.find("/")-2]):
+            sign = -1
+        const = sign * int(sym[sym.find("/")-1])/int(sym[sym.find("/")+1])
+
+    return vec, const
+
+
+# Converts symmetry operation xyz form into matrix+vector form
+def symop_convert(symop_xyz):
+    symmetry_count = len(symop_xyz)
+    mat = np.zeros((symmetry_count,3,3),dtype = "float")
+    vec = np.zeros((symmetry_count,3),dtype = "float")
+    # we expect comma-delimited symmetry operations
+    for i in range(symmetry_count):
+        symop = symop_xyz[i][1]
+        c1 = symop.find(",")
+        c2 = symop[(c1+1):].find(",")
+        
+        (mat[i, :, 0], vec[i, 0]) = symop_part(symop[0:c1])
+        (mat[i, :, 1], vec[i, 1]) = symop_part(symop[(c1+1):c1+c2+1])
+        (mat[i, :, 2], vec[i, 2]) = symop_part(symop[(c1+c2+2):])
+        
+    return mat, vec
+
+
 # %%
 def read_cif():
     
     filename="felix.cif"
-    name=open(filename,"r")
-    content=name.readlines()
+    cif=open(filename,"r")
+    content=cif.readlines()
     
     # Reading the data from the file
     # Space Group information
-    space_group_number = find(content,"_symmetry_Int_Tables_number",name,"int")
-    space_group_name = find(content,"_symmetry_space_group_name_H-M",name,"str")
-    # To remove the quotes in the space group name:
-    space_group_name = space_group_name.replace("'","")
-    lattice_type = space_group_name[0]
+    space_group_number = cif_find(content,"_symmetry_Int_Tables_number",cif,"int")
+    space_group_cif = cif_find(content,"_symmetry_space_group_cif_H-M",cif,"str")
+    # To remove the quotes in the space group cif:
+    space_group_cif = space_group_cif.replace("'","")
+    lattice_type = space_group_cif[0]
     
     # Cell dimensions
-    cell_length_a = find(content,"_cell_length_a",name,"real")
-    cell_length_b = find(content,"_cell_length_b",name,"real")
-    cell_length_c = find(content,"_cell_length_c",name,"real")
-    alpha = find(content,"_cell_angle_alpha",name,"real")
-    beta = find(content,"_cell_angle_beta",name,"real")
-    gamma = find(content,"_cell_angle_gamma",name,"real")
+    cell_length_a = cif_find(content,"_cell_length_a",cif,"real")
+    cell_length_b = cif_find(content,"_cell_length_b",cif,"real")
+    cell_length_c = cif_find(content,"_cell_length_c",cif,"real")
+    alpha = cif_find(content,"_cell_angle_alpha",cif,"real")
+    beta = cif_find(content,"_cell_angle_beta",cif,"real")
+    gamma = cif_find(content,"_cell_angle_gamma",cif,"real")
     # Convert angles from degrees to radians
     alpha = alpha*np.pi/180
     beta = beta*np.pi/180
     gamma = gamma*np.pi/180
 
-    volume = find(content,"_cell_volume",name,"real")
+    volume = cif_find(content,"_cell_volume",cif,"real")
     if (volume == "absent"):
         print("...calculated cell volume")
         volume1 = cell_length_a * cell_length_b * cell_length_c
@@ -75,9 +121,9 @@ def read_cif():
         volume = volume1*np.sqrt(volume2+volume3)
     
     # Chemical Formula
-    chemical_formula = find(content,"_chemical_formula_sum",name,"str")
+    chemical_formula = cif_find(content,"_chemical_formula_sum",cif,"str")
     if chemical_formula == "absent":
-        chemical_formula = find(content,"_chemical_formula_moiety",name,"str")
+        chemical_formula = cif_find(content,"_chemical_formula_moiety",cif,"str")
     LN=int(len(chemical_formula.strip()))
     
     # atoms, their positions, Debye-Waller factors and occupancy
@@ -128,16 +174,16 @@ def read_cif():
         if len(text[i])>length:
             length = len(text[i])
     length = str(length)
-    symmetry_string = np.empty((sym_count,2), dtype = f"<U"+length)
+    symop_xyz = np.empty((sym_count,2), dtype = f"<U"+length)
     for i in range(sym_count):
-        symmetry_string[i][0] = str(i+1)
-        symmetry_string[i][1] = (text[i])
+        symop_xyz[i][0] = str(i+1)
+        symop_xyz[i][1] = (text[i])
     
     name.close()
 
     return (space_group_number, basis_atom_count, LN, basis_atom_label,
             basis_atom_name, lattice_type, space_group_name, chemical_formula,
-            symmetry_string, cell_length_a, cell_length_b, cell_length_c, alpha, beta, gamma,
+            symop_xyz, cell_length_a, cell_length_b, cell_length_c, alpha, beta, gamma,
             volume, basis_atom_position, basis_isoDW, basis_occupancy)
 
 
@@ -146,5 +192,5 @@ def read_cif():
     
 (space_group_number, basis_atom_count, LN, basis_atom_label, 
 basis_atom_name, lattice_type, space_group_name, chemical_formula, 
-symmetry_string, cell_length_a, cell_length_b, cell_length_c, alpha, beta, gamma, 
+symop_xyz, cell_length_a, cell_length_b, cell_length_c, alpha, beta, gamma, 
 volume, basis_atom_position, basis_isoDW, basis_occupancy) = read_cif()
